@@ -1,0 +1,188 @@
+backend/
+├── src/
+│   ├── config/
+│   │   ├── database.ts
+│   │   ├── mongodb.ts
+│   │   ├── openai.ts
+│   │   ├── pinecone.ts
+│   │   └── supabase.ts
+│   │
+│   ├── controllers/
+│   │   └── chatController.ts
+│   │
+│   ├── routes/
+│   │   └── chatRoutes.ts
+│   │
+│   ├── services/
+│   │   ├── embeddingService.ts
+│   │   ├── knowledgeService.ts
+│   │   ├── memoryService.ts
+│   │   ├── queryService.ts
+│   │   ├── responseService.ts
+│   │   ├── retrievalService.ts
+│   │   ├── sqlExecutorService.ts
+│   │   ├── sqlGeneratorService.ts
+│   │   └── sqlValidatorService.ts
+│   │
+│   ├── models/
+│   │   └── ChatMessage.ts
+│   │
+│   ├── knowledge/
+│   │   └── databaseKnowledge.ts
+│   │
+│   └── index.ts
+│
+├── .env
+├── .env.example
+├── .gitignore
+├── package.json
+└── tsconfig.json
+
+for testing
+app.get("/test-supabase", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("venues")
+      .select("*")
+      .limit(5);
+
+    if (error) {
+      return res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+app.get("/test-pinecone", async (req, res) => {
+    try {
+      const indexes = await pinecone.listIndexes();
+  
+      return res.json({
+        success: true,
+        indexes,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+  app.get("/test-embedding", async (req, res) => {
+    try {
+      const embedding = await createEmbedding("Hello shiftsdeal");
+  
+      return res.json({
+        success: true,
+        dimensions: embedding.length,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+  app.get("/upload-knowledge", async (req, res) => {
+    try {
+      const result = await uploadKnowledge();
+  
+      return res.json(result);
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+  app.get("/test-retrieval", async (req, res) => {
+    try {
+      const question =
+        req.query.question?.toString() || "What columns are available in venues?";
+  
+      const results = await retrieveKnowledge(question);
+  
+      return res.json({
+        success: true,
+        question,
+        results,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+  app.get("/test-sql", async (req, res) => {
+    try {
+      const question =
+        req.query.question?.toString() ||
+        "Show me all venues";
+  
+      const retrieved = await retrieveKnowledge(question);
+  
+      const knowledge = retrieved
+        .map((item) => item.text)
+        .filter(Boolean)
+        .join("\n\n");
+  
+      const sql = await generateSQL(question, knowledge, "" );
+  
+      return res.json({
+        success: true,
+        question,
+        knowledge,
+        sql,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+  app.get("/test-sql-validation", (req, res) => {
+    const sql =
+      req.query.sql?.toString() ||
+      "SELECT id, name FROM venues;";
+  
+    const validation = validateSQL(sql);
+  
+    return res.json({
+      sql,
+      ...validation,
+    });
+  });
+  app.get("/test-execute", async (req, res) => {
+    try {
+      const sql = "SELECT id, name FROM venues LIMIT 5";
+  
+      const data = await executeSQL(sql);
+  
+      return res.json({
+        success: true,
+        data,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      });
+    }
+  });
