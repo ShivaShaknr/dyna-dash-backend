@@ -24,6 +24,33 @@ Rules:
 - Limit results to 10 unless the user explicitly asks for more.
 - Return only SQL.
 - Do not use markdown code blocks.
+
+GRAPH-FRIENDLY SQL RULES:
+
+- For categorical comparisons, distributions, pie charts, and bar charts,
+  return one row per category.
+
+- Prefer this structure:
+  category_column | numeric_value
+
+- Do not return multiple aggregate metrics as separate columns in one row
+  when the result represents categories.
+
+Example:
+
+BAD:
+SELECT
+  COUNT(...) AS completed,
+  COUNT(...) AS pending,
+  COUNT(...) AS expired;
+
+GOOD:
+SELECT
+  payment_status AS status,
+  COUNT(DISTINCT venue_id) AS count
+FROM bookings
+WHERE payment_status IN ('fully_paid', 'pending', 'expired')
+GROUP BY payment_status;
 `,
       },
       {

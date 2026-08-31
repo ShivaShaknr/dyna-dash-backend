@@ -52,6 +52,9 @@ export async function processQuestion(
 
   // STEP 3: Actual data query
   const retrieved = await retrieveKnowledge(question);
+  if (!retrieved.length) {
+    throw new Error("No relevant knowledge found for this question");
+  }
 
   const knowledge = retrieved
     .map((item) => item.text)

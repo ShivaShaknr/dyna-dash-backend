@@ -5,6 +5,7 @@ import cors from "cors";
 
 import { connectMongoDB } from "./config/mongodb.js";
 import chatRoutes from "./routes/chatRoutes.js";
+import { uploadKnowledge } from "./services/knowledgeService.js";
 
 const app = express();
 
@@ -42,6 +43,22 @@ app.get("/health", (_req, res) => {
 // /ask
 // /history/:sessionId
 app.use("/", chatRoutes);
+
+app.get("/upload-knowledge", async (_req, res) => {
+    try {
+      const result = await uploadKnowledge();
+  
+      return res.json(result);
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      });
+    }
+  });
 
 const PORT = Number(process.env.PORT) || 5000;
 

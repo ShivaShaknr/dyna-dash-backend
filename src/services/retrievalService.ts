@@ -6,13 +6,16 @@ export async function retrieveKnowledge(question: string) {
 
   const result = await pineconeIndex.query({
     vector: embedding,
-    topK: 3,
+    topK: 5,
     includeMetadata: true,
   });
 
-  return result.matches.map((match) => ({
-    id: match.id,
-    score: match.score,
-    text: match.metadata?.text,
-  }));
+  return result.matches
+    .filter((match) => match.metadata?.text)
+    .map((match) => ({
+      id: match.id,
+      score: match.score,
+      type: match.metadata?.type,
+      text: String(match.metadata?.text),
+    }));
 }
